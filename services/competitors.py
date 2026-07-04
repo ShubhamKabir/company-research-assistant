@@ -12,37 +12,57 @@ client = OpenAI(
 
 def get_competitors(company_name: str, model: str):
 
-    prompt = f"""
-You are an experienced business analyst.
+    system_prompt = """
+You are a senior business analyst.
 
-For the company "{company_name}", generate a competitor analysis.
+Generate professional competitor analysis in Markdown.
 
-Return exactly FIVE competitors.
+Rules:
+- Return ONLY Markdown.
+- Do NOT include introductions.
+- Do NOT include conclusions.
+- Do NOT say "Here is the analysis".
+- Return EXACTLY 5 competitors.
+- Never include the target company itself.
+- Keep the response concise.
+- Use factual information only.
+- Keep each competitor between 4 and 6 lines.
+- Total response should be under 350 words.
+"""
 
-For each competitor provide:
+    user_prompt = f"""
+Analyze the competitive landscape for:
+
+{company_name}
+
+For each competitor use EXACTLY this format:
 
 ## Competitor Name
 
-Industry
+Industry:
+Why they compete:
+Key strengths:
+Key weaknesses:
 
-Why they compete
-
-Key strengths
-
-Key weaknesses
-
-Keep the answer concise and professional.
+Do not use tables.
+Do not use bullet lists.
+Do not add extra sections.
 """
 
     response = client.chat.completions.create(
         model=model,
         messages=[
             {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
                 "role": "user",
-                "content": prompt
-            }
+                "content": user_prompt,
+            },
         ],
         temperature=0.2,
+        max_tokens=700,
     )
 
     return response.choices[0].message.content

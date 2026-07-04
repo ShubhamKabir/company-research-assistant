@@ -12,50 +12,83 @@ from reportlab.lib.units import inch
 
 def clean_text(text):
 
-    # Remove markdown headings
-    text = re.sub(r"^###\s*", "", text, flags=re.MULTILINE)
-    text = re.sub(r"^##\s*", "", text, flags=re.MULTILINE)
-    text = re.sub(r"^#\s*", "", text, flags=re.MULTILINE)
-
-    # Remove bold markers
     text = text.replace("**", "")
-
-    # Remove horizontal rules
     text = text.replace("---", "")
 
-    # Replace unicode issues
     text = text.replace("■", "-")
     text = text.replace("•", "-")
+    text = text.replace("–", "-")   # en dash
+    text = text.replace("—", "-")   # em dash
+    text = text.replace("-", "-")   # non-breaking hyphen
 
-    # Remove markdown table separator rows
-    text = re.sub(r"\|[-: ]+\|", "", text)
-
-    # Remove excessive blank lines
     text = re.sub(r"\n{3,}", "\n\n", text)
+
+    headings = [
+        "Company Summary",
+        "Products & Services",
+        "AI-Generated Pain Points",
+        "Suggested Competitors",
+        "Competitor Analysis",
+    ]
+
+    for heading in headings:
+        text = text.replace(heading, f"\n\n{heading}\n")
 
     return text.strip()
 
 
-def add_section(story, title, text, styles):
+def add_report(story, text, styles):
 
-    story.append(
-        Paragraph(f"<b>{title}</b>", styles["Heading2"])
-    )
+    headings = [
+        "Company Summary",
+        "Products & Services",
+        "AI-Generated Pain Points",
+        "Suggested Competitors",
+        "Competitor Analysis",
+    ]
 
-    story.append(Spacer(1, 10))
-
-    for line in text.split("\n"):
+    for line in text.splitlines():
 
         line = line.strip()
 
         if not line:
             continue
 
+        # Remove markdown heading symbols
+        if line.startswith("#"):
+            line = line.lstrip("#").strip()
+
+        # Main section headings
+        if line in headings:
+
+            story.append(Spacer(1, 10))
+
+            story.append(
+                Paragraph(
+                    f"<b>{line}</b>",
+                    styles["Heading2"],
+                )
+            )
+
+            story.append(Spacer(1, 10))
+
+            continue
+
+        # Bullet points
+        if line.startswith("- "):
+
+            story.append(
+                Paragraph(line, styles["BodyText"])
+            )
+
+            continue
+
+        # Normal paragraph
         story.append(
             Paragraph(line, styles["BodyText"])
         )
 
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 18))
 
 
 def generate_pdf(company, report, competitors):
@@ -77,34 +110,56 @@ def generate_pdf(company, report, competitors):
 
     story = []
 
+    # Title
     story.append(
         Paragraph(
-            "AI Company Research Report",
+            "<b>AI Company Research Report</b>",
             styles["Title"],
-        )
-    )
-
-    story.append(Spacer(1, 20))
-
-    story.append(
-        Paragraph(
-            f"<b>Company:</b> {company}",
-            styles["Heading2"],
         )
     )
 
     story.append(Spacer(1, 18))
 
-    add_section(
+    # Company Name
+    story.append(
+        Paragraph(
+            f"<b>Company:</b> {company.title()}",
+            styles["Heading2"],
+        )
+    )
+
+    story.append(Spacer(1, 20))
+
+    # Research Section
+    story.append(
+        Paragraph(
+            "<b>Company Research</b>",
+            styles["Heading1"],
+        )
+    )
+
+    story.append(Spacer(1, 12))
+
+    add_report(
         story,
-        "Company Research",
         report,
         styles,
     )
 
-    add_section(
+    story.append(Spacer(1, 20))
+
+    # Competitor Section
+    story.append(
+        Paragraph(
+            "<b>Competitor Analysis</b>",
+            styles["Heading1"],
+        )
+    )
+
+    story.append(Spacer(1, 12))
+
+    add_report(
         story,
-        "Competitor Analysis",
         competitors,
         styles,
     )
