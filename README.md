@@ -157,7 +157,7 @@ streamlit run app.py
 
 ### PDF Export
 
-![PDF Report](assets/pdf-report.png)
+![PDF Report](assets/pdf-report.pdf)
 
 ---
 
